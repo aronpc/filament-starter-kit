@@ -22,6 +22,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Override;
+use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
 
 final class AdminPanelServiceProvider extends PanelProvider
 {
@@ -62,6 +63,8 @@ final class AdminPanelServiceProvider extends PanelProvider
                             'Admin' => 'admin@admin.com',
                         ]
                     ),
+                FilamentBackgroundsPlugin::make()
+                    ->showAttribution(false),
             ])
             ->widgets([
                 AccountWidget::class,
