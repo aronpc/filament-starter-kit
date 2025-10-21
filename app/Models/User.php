@@ -14,6 +14,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -49,6 +51,7 @@ final class User extends Authenticatable
     use HasFactory;
 
     use HasRoles;
+    use LogsActivity;
     use Notifiable;
 
     /**
@@ -71,6 +74,19 @@ final class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    /**
+     * Configure activity logging options.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'email_verified_at'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('user')
+            ->setDescriptionForEvent(fn (string $eventName): string => "User {$eventName}");
+    }
 
     /**
      * Get the attributes that should be cast.
