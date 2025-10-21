@@ -1,0 +1,10 @@
+<?php
+
+namespace {{ namespace }};
+
+use App\Contracts\HasEnumFeatures;
+
+enum {{ class }}
+{
+    use HasEnumFeatures;
+}

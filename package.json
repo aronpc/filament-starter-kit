@@ -1,0 +1,26 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite",
+        "format": "prettier --write resources/",
+        "format:check": "prettier --check resources/"
+    },
+    "devDependencies": {
+        "prettier": "^3.4.2",
+        "prettier-plugin-tailwindcss": "^0.6.11"
+    },
+    "dependencies": {
+        "@tailwindcss/vite": "^4.1.11",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^2.0",
+        "tailwindcss": "^4.0.0",
+        "vite": "^7.0.4"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "4.9.5",
+        "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
+        "lightningcss-linux-x64-gnu": "^1.29.1"
+    }
+}

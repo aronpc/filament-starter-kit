@@ -1,0 +1,270 @@
+#!/bin/bash
+
+echo "🔍 Executando verificações de código..."
+
+# Cores para output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+NC='\033[0m' # No Color
+
+# Função para imprimir mensagens coloridas
+print_error() { echo -e "${RED}❌ $1${NC}"; }
+print_success() { echo -e "${GREEN}✅ $1${NC}"; }
+print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+print_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
+print_step() { echo -e "${PURPLE}🚀 $1${NC}"; }
+
+# Variáveis de controlew
+EXIT_CODE=0
+TOTAL_CHECKS=0
+PASSED_CHECKS=0
+
+# Verifica dependências
+check_dependencies() {
+    print_step "Verificando dependências..."
+    local missing_deps=""
+
+    [ ! -f "vendor/bin/pint" ] && missing_deps="${missing_deps}Laravel Pint\n"
+    [ ! -f "vendor/bin/phpstan" ] && missing_deps="${missing_deps}PHPStan/Larastan\n"
+    [ ! -f "vendor/bin/pest" ] && missing_deps="${missing_deps}Pest\n"
+
+    if [ -n "$missing_deps" ]; then
+        print_error "Dependências não encontradas:"
+        echo -e "$missing_deps" | while read -r dep; do
+            [ -n "$dep" ] && echo "   - $dep"
+        done
+        echo ""
+        print_info "Execute os seguintes comandos:"
+        echo "   composer install"
+        echo "   composer require --dev larastan/larastan (se ainda não instalado)"
+        exit 1
+    fi
+
+    print_success "Todas as dependências encontradas!"
+    echo ""
+}
+
+# Obtém arquivos PHP modificados
+get_staged_php_files() {
+    git diff --cached --name-only --diff-filter=ACM | grep '\.php$'
+}
+
+# Obtém todos os arquivos modificados
+get_all_staged_files() {
+    git diff --cached --name-only --diff-filter=ACM
+}
+
+# Executa Laravel Pint
+run_pint() {
+    local staged_files=$1
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+
+    if [ -z "$staged_files" ]; then
+        print_success "Laravel Pint: Nenhum arquivo PHP para verificar formatação."
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        return 0
+    fi
+
+    print_step "Executando Laravel Pint (formatação de código)..."
+
+    # Conta arquivos a serem verificados
+    local file_count=$(echo "$staged_files" | wc -w)
+    print_info "Verificando formatação de $file_count arquivo(s)..."
+
+    if composer test:lint 2>/dev/null; then
+        print_success "Laravel Pint: Formatação de código aprovada!"
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        return 0
+    else
+        print_error "Laravel Pint: Problemas de formatação encontrados."
+        echo ""
+        print_info "💡 Para corrigir automaticamente:"
+        echo "   composer fix"
+        echo ""
+        print_info "📋 Arquivos com problemas:"
+        for file in $staged_files; do
+            echo "   - $file"
+        done
+        return 1
+    fi
+}
+
+# Executa PHPStan/Larastan
+run_phpstan() {
+    local staged_files=$1
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+
+    if [ -z "$staged_files" ]; then
+        print_success "PHPStan: Nenhum arquivo PHP para análise estática."
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        return 0
+    fi
+
+    print_step "Executando PHPStan/Larastan (análise estática)..."
+
+    local file_count=$(echo "$staged_files" | wc -w)
+    print_info "Analisando $file_count arquivo(s)..."
+
+    if composer test:types 2>/dev/null; then
+        print_success "PHPStan: Análise estática aprovada!"
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        return 0
+    else
+        print_error "PHPStan: Problemas encontrados na análise estática."
+        echo ""
+        print_info "💡 Para verificar detalhes:"
+        echo "   composer test:types"
+        echo ""
+        return 1
+    fi
+}
+
+# Executa testes com Pest
+run_pest() {
+    local staged_files=$1
+    local all_staged_files=$2
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+
+    print_step "Executando testes com Pest..."
+
+    # Verifica se há arquivos de teste modificados
+    local test_files=$(echo "$all_staged_files" | grep "tests/" || echo "")
+
+    if [ -n "$test_files" ]; then
+        print_info "Arquivos de teste modificados detectados:"
+        for file in $test_files; do
+            echo "   - $file"
+        done
+        print_info "Executando suite completa de testes..."
+    elif [ -n "$staged_files" ]; then
+        print_info "Executando testes..."
+    fi
+
+    if [ -n "$staged_files" ] || [ -n "$test_files" ]; then
+        if composer test:unit 2>/dev/null; then
+            print_success "Pest: Todos os testes passaram!"
+            PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            return 0
+        else
+            print_error "Pest: Alguns testes falharam."
+            echo ""
+            print_info "💡 Para executar testes individualmente:"
+            echo "   composer test:unit"
+            echo ""
+            return 1
+        fi
+    else
+        print_success "Pest: Nenhum arquivo relevante para testes."
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        return 0
+    fi
+}
+
+# Mostra estatísticas finais
+show_final_stats() {
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo "📊 RESUMO DAS VERIFICAÇÕES"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        print_success "🎉 COMMIT APROVADO!"
+        print_info "✨ $PASSED_CHECKS/$TOTAL_CHECKS verificações passaram com sucesso!"
+    else
+        print_error "❌ COMMIT REJEITADO!"
+        print_warning "⚠️  $PASSED_CHECKS/$TOTAL_CHECKS verificações passaram."
+        echo ""
+        print_info "🛠️  COMANDOS ÚTEIS PARA CORREÇÃO:"
+        echo ""
+        echo "   🔧 Corrigir automaticamente (formatação + refactor):"
+        echo "      composer fix"
+        echo ""
+        echo "   🔍 Análise estática:"
+        echo "      composer test:types"
+        echo ""
+        echo "   🧪 Testes:"
+        echo "      composer test:unit"
+        echo ""
+        echo "   📋 Verificação completa:"
+        echo "      composer test"
+    fi
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+}
+
+# Função principal
+main() {
+    echo ""
+    echo "🚀 PRE-COMMIT HOOK - VERIFICAÇÕES DE QUALIDADE"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+
+    # Verifica dependências
+    check_dependencies
+
+    # Obtém arquivos modificados
+    local staged_php_files=$(get_staged_php_files)
+    local all_staged_files=$(get_all_staged_files)
+
+    if [ -z "$staged_php_files" ] && [ -z "$(echo "$all_staged_files" | grep "tests/")" ]; then
+        print_success "Nenhum arquivo PHP ou de teste modificado."
+        print_info "Commit aprovado sem verificações adicionais."
+        exit 0
+    fi
+
+    if [ -n "$staged_php_files" ]; then
+        print_info "📄 Arquivos PHP modificados:"
+        for file in $staged_php_files; do
+            echo "   • $file"
+        done
+        echo ""
+    fi
+
+    local test_files=$(echo "$all_staged_files" | grep "tests/" || echo "")
+    if [ -n "$test_files" ]; then
+        print_info "🧪 Arquivos de teste modificados:"
+        for file in $test_files; do
+            echo "   • $file"
+        done
+        echo ""
+    fi
+
+    echo "────────────────────────────────────────────────────────────"
+    echo ""
+
+    # 1. Executa Laravel Pint
+    if ! run_pint "$staged_php_files"; then
+        EXIT_CODE=1
+    fi
+    echo ""
+
+    # 2. Executa PHPStan/Larastan
+    if ! run_phpstan "$staged_php_files"; then
+        EXIT_CODE=1
+    fi
+    echo ""
+
+    # 3. Executa Pest (apenas se os passos anteriores passaram ou se forçado)
+    if [ $EXIT_CODE -eq 0 ]; then
+        if ! run_pest "$staged_php_files" "$all_staged_files"; then
+            EXIT_CODE=1
+        fi
+    else
+        print_warning "Pest: Pulando testes devido a problemas anteriores."
+        print_info "Corrija os problemas de formatação/análise estática primeiro."
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+    fi
+
+    # Mostra estatísticas finais
+    show_final_stats
+
+    exit $EXIT_CODE
+}
+
+# Executa a função principal
+main

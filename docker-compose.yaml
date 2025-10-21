@@ -1,0 +1,139 @@
+services:
+  app:
+    restart: always
+    container_name: app-${APP_ENV:-local}
+    build:
+      context: ./docker/php/
+    environment:
+      TZ: '${APP_TIMEZONE}'
+      SHOW_WELCOME_MESSAGE: false
+      PHP_OPCACHE_ENABLE: 1
+      PHP_FPM_POOL_NAME: "pms-app"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - '${FORWARD_APP_PORT:-80}:8080'
+    volumes:
+      - '.:/var/www/html'
+      - './docker/backups:/var/www/html/storage/app/private/'
+    networks:
+      - npc_network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+
+  worker:
+    restart: always
+    container_name: worker-${APP_ENV:-local}
+    build:
+      context: ./docker/php/
+    command: [ "php", "/var/www/html/artisan", "horizon" ]
+    environment:
+      TZ: '${APP_TIMEZONE}'
+      SHOW_WELCOME_MESSAGE: false
+      PHP_OPCACHE_ENABLE: 1
+      PHP_FPM_POOL_NAME: "pms-worker"
+    volumes:
+      - '.:/var/www/html'
+      - './docker/backups:/var/www/html/storage/app/private/'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - npc_network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+
+  tasks:
+    restart: always
+    container_name: tasks-${APP_ENV:-local}
+    build:
+      context: ./docker/php/
+    command: [ "php", "/var/www/html/artisan", "schedule:work" ]
+    environment:
+      TZ: '${APP_TIMEZONE}'
+      SHOW_WELCOME_MESSAGE: false
+      PHP_OPCACHE_ENABLE: 1
+      PHP_FPM_POOL_NAME: "pms-schedule"
+    volumes:
+      - '.:/var/www/html'
+      - './docker/backups:/var/www/html/storage/app/private/'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - npc_network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+
+  redis:
+    restart: always
+    container_name: redis-${APP_ENV:-local}
+    image: 'redis:alpine'
+    ports:
+      - '${FORWARD_REDIS_PORT:-6379}:6379'
+    volumes:
+      - './docker/database/redis:/data'
+    networks:
+      - npc_network
+    environment:
+      LOCAL_REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: /bin/sh -c 'redis-server --appendonly yes --requirepass $${LOCAL_REDIS_PASSWORD}'
+    healthcheck:
+      test: [ 'CMD', 'redis-cli', '-a', '$LOCAL_REDIS_PASSWORD', 'ping' ]
+      retries: 3
+      timeout: 5s
+      interval: 10s
+      start_period: 5s
+      start_interval: 1s
+
+
+  mariadb:
+    restart: always
+    container_name: mariadb-${APP_ENV:-local}
+    image: 'mariadb:10'
+    ports:
+      - '${FORWARD_DB_PORT:-3306}:3306'
+    environment:
+      TZ: '${APP_TIMEZONE}'
+      MARIADB_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MARIADB_ROOT_HOST: '%'
+      MARIADB_DATABASE: '${DB_DATABASE}'
+      MARIADB_USER: '${DB_USERNAME}'
+      MARIADB_PASSWORD: '${DB_PASSWORD}'
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
+    volumes:
+      - './docker/database/mariadb:/var/lib/mysql'
+      - './docker/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
+    networks:
+      - npc_network
+    healthcheck:
+      test: [ 'CMD', 'mysqladmin', 'ping', '-p${DB_PASSWORD}' ]
+      retries: 3
+      timeout: 5s
+      interval: 10s
+      start_period: 5s
+      start_interval: 1s
+
+  mailpit:
+      restart: no
+      container_name: mailpit-${APP_ENV:-local}
+      scale: ${DEV_CONTAINERS:-0}
+      image: 'axllent/mailpit:latest'
+      ports:
+        - '${FORWARD_MAILPIT_PORT:-1025}:1025'
+        - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+      env_file:
+        - .env
+      networks:
+        - npc_network
+
+networks:
+  npc_network:
+    driver: bridge

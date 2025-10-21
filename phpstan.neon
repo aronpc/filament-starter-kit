@@ -1,0 +1,17 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - bootstrap
+        - routes
+        - config
+    level: 7
+    tmpDir: /tmp/phpstan
+    excludePaths:
+        - tests/Browser/*
+        - tests/Feature/*
+        - tests/Unit/*
+        - tests/Pest.php
