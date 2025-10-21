@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Override;
 
 final class UserResource extends Resource
@@ -28,6 +29,11 @@ final class UserResource extends Resource
     public static function getNavigationLabel(): string
     {
         return __('navigation.users');
+    }
+
+    public static function getNavigationGroup(): string
+    {
+        return __('navigation.user_management');
     }
 
     public static function getPluralLabel(): string
@@ -50,6 +56,15 @@ final class UserResource extends Resource
     public static function table(Table $table): Table
     {
         return UserTable::configure($table);
+    }
+
+    /**
+     * @return Builder<User>
+     */
+    #[Override]
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with('roles');
     }
 
     public static function getPages(): array

@@ -6,6 +6,7 @@ return [
     'name' => 'Nome',
     'email' => 'E-mail',
     'password' => 'Senha',
+    'roles' => 'Roles',
     'email_verified_at' => 'E-mail Verificado Em',
     'two_factor_confirmed_at' => '2FA Confirmado Em',
     'two_factor_secret' => 'Segredo 2FA',
