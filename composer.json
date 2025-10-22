@@ -59,7 +59,7 @@
         }
     },
     "scripts": {
-        "hooks": "git config core.hooksPath .hooks",
+        "hooks": "test -d .git && git config core.hooksPath .hooks || true",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",
