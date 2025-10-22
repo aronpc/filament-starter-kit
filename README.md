@@ -8,6 +8,7 @@ Um starter kit completo com Filament 4.1, incluindo sistema de permissões e ger
 - **Filament 4.1** - Admin Panel completo
 - **Filament Shield** - Roles & Permissions (Spatie Permission)
 - **Filament Spatie Media Library** - Gerenciamento de mídia
+- **Filament Logger** - Activity logging (Spatie Activity Log)
 - **Livewire 3** - Full-stack framework
 - **Tailwind CSS 4** - Styling
 - **Pest 4** - Testing framework
@@ -114,6 +115,14 @@ php artisan shield:generate --all      # Gerar permissões para recursos
 - ✅ Conversões de imagem automáticas
 - ✅ Múltiplas collections
 - ✅ Integração com Filament Forms
+
+### Activity Logging
+- ✅ Log automático de ações em Filament Resources
+- ✅ Log de login/logout de usuários
+- ✅ Log de notificações enviadas
+- ✅ Log customizado em models (trait LogsActivity)
+- ✅ Visualização de logs no Admin Panel
+- ✅ Agrupado em "User Management"
 
 ### Code Quality & Architecture
 - ✅ Architecture tests com Pest
@@ -258,6 +267,50 @@ SpatieMediaLibraryFileUpload::make('image')
     ->image()
 ```
 
+## Activity Logging
+
+O Activity Logging está configurado e pronto para uso. Para adicionar logging a um model:
+
+```php
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
+class Post extends Model
+{
+    use LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['title', 'content', 'is_published'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('post')
+            ->setDescriptionForEvent(fn (string $eventName): string => "Post {$eventName}");
+    }
+}
+```
+
+### Visualizar Logs
+
+Acesse `/admin` e navegue até **User Management > Activities** para visualizar todos os logs de atividade.
+
+### Log Manual
+
+```php
+// Log simples
+activity()->log('Ação customizada realizada');
+
+// Log com contexto
+activity()
+    ->performedOn($model)
+    ->causedBy($user)
+    ->withProperties(['key' => 'value'])
+    ->log('Descrição da ação');
+```
+
+Para mais detalhes, consulte `.claude/docs/14-activity-logging.md`.
+
 ## Testing
 
 ```bash
@@ -297,7 +350,9 @@ MIT
 
 - [Filament v4 Docs](https://filamentphp.com/docs/4.x)
 - [Filament Shield Docs](https://github.com/bezhanSalleh/filament-shield)
+- [Filament Logger Docs](https://github.com/unknow-sk/filament-logger)
 - [Spatie Media Library](https://spatie.be/docs/laravel-medialibrary)
 - [Spatie Permission](https://spatie.be/docs/laravel-permission)
+- [Spatie Activity Log](https://spatie.be/docs/laravel-activitylog)
 - [Laravel Actions](https://laravelactions.com/)
 - [ArchTech Enums](https://github.com/archtechx/enums)

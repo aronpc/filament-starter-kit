@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use DutchCodingCompany\FilamentDeveloperLogins\FilamentDeveloperLoginsPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -22,6 +23,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Override;
+use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
 
 final class AdminPanelServiceProvider extends PanelProvider
 {
@@ -50,10 +52,29 @@ final class AdminPanelServiceProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
+            ->resources([
+                config('filament-logger.activity_resource'),
+            ])
             ->pages([
                 Dashboard::class,
             ])
             ->plugins([
+                FilamentShieldPlugin::make()
+                    ->gridColumns([
+                        'default' => 1,
+                        'sm' => 2,
+                        'lg' => 3,
+                    ])
+                    ->sectionColumnSpan(1)
+                    ->checkboxListColumns([
+                        'default' => 1,
+                        'sm' => 2,
+                        'lg' => 4,
+                    ])
+                    ->resourceCheckboxListColumns([
+                        'default' => 1,
+                        'sm' => 2,
+                    ]),
                 FilamentDeveloperLoginsPlugin::make()
                     ->enabled(fn (): bool => ! app()->isProduction())
                     ->switchable(true)
@@ -62,6 +83,8 @@ final class AdminPanelServiceProvider extends PanelProvider
                             'Admin' => 'admin@admin.com',
                         ]
                     ),
+                FilamentBackgroundsPlugin::make()
+                    ->showAttribution(false),
             ])
             ->widgets([
                 AccountWidget::class,
