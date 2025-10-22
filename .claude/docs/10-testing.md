@@ -716,14 +716,14 @@ final class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // ✅ CRITICAL: Require strong password in production
-        if (app()->environment('production') && empty(env('SEED_ADMIN_PASSWORD'))) {
+        if (app()->environment('production') && empty(config('app.seeder.admin_password'))) {
             throw new \RuntimeException(
                 'SEED_ADMIN_PASSWORD environment variable must be set to seed admin in production.'
             );
         }
 
-        // ✅ Use env password in production, generate strong password in dev
-        $password = (string) env('SEED_ADMIN_PASSWORD', Str::password(20));
+        // ✅ Use config password (from env) in production, generate strong password in dev
+        $password = (string) config('app.seeder.admin_password', Str::password(20));
 
         // Create admin user
         $adminUser = User::query()->firstOrCreate(
@@ -746,6 +746,34 @@ final class DatabaseSeeder extends Seeder
 }
 ```
 
+### Configuration File Setup
+
+**CRITICAL:** Never use `env()` directly in code. Always use `config()` helper.
+
+```php
+<?php
+
+// config/app.php
+return [
+    // ... other config
+
+    /*
+    |--------------------------------------------------------------------------
+    | Database Seeder Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for database seeders, including admin user password.
+    | In production, SEED_ADMIN_PASSWORD must be defined. In development,
+    | a strong random password will be generated if not provided.
+    |
+    */
+
+    'seeder' => [
+        'admin_password' => env('SEED_ADMIN_PASSWORD'),
+    ],
+];
+```
+
 ### Environment Configuration
 
 ```bash
@@ -762,7 +790,8 @@ SEED_ADMIN_PASSWORD=your-super-strong-password-here-9a8f7d6e5c4b3a2
 ### Security Checklist for Seeders
 
 ✅ **DO:**
-- Use environment variables for passwords
+- Use `config()` helper to access environment variables (NEVER use `env()` directly)
+- Define seeder config in `config/app.php` with `env('SEED_ADMIN_PASSWORD')`
 - Generate strong random passwords in development (`Str::password(20)`)
 - Require `SEED_ADMIN_PASSWORD` in production
 - Log generated passwords only in development
@@ -770,6 +799,7 @@ SEED_ADMIN_PASSWORD=your-super-strong-password-here-9a8f7d6e5c4b3a2
 - Document password requirements in `.env.example`
 
 ❌ **DON'T:**
+- **Don't use `env()` directly in code** (always use `config()` helper instead)
 - Don't hardcode passwords (especially weak ones like "admin", "password", "123456")
 - Don't use the same password across environments
 - Don't seed admin users in production without explicit password

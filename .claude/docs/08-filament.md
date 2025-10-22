@@ -61,8 +61,9 @@ namespace App\Filament\Owner\Resources;
 use App\Filament\Owner\Resources\BusinessResource\Pages;
 use App\Models\Business;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -90,11 +91,11 @@ final class BusinessResource extends Resource
         return __('messages.resources.business');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make()
+        return $schema
+            ->components([
+                Schemas\Components\Section::make()
                     ->schema([
                         Forms\Components\TextInput::make('name')
                             ->label(__('fields.name'))
@@ -323,7 +324,7 @@ Forms\Components\Repeater::make('items')
 ### Section
 
 ```php
-Forms\Components\Section::make()
+Schemas\Components\Section::make()
     ->heading(__('messages.basic_information'))
     ->description(__('messages.basic_information_desc'))
     ->schema([
@@ -343,7 +344,7 @@ Forms\Components\Section::make()
 ### Grid
 
 ```php
-Forms\Components\Grid::make()
+Schemas\Components\Grid::make()
     ->schema([
         Forms\Components\TextInput::make('name')
             ->label(__('fields.name'))
@@ -363,16 +364,16 @@ Forms\Components\Grid::make()
 ### Tabs
 
 ```php
-Forms\Components\Tabs::make()
+Schemas\Components\Tabs::make()
     ->tabs([
-        Forms\Components\Tabs\Tab::make(__('tabs.basic'))
+        Schemas\Components\Tabs\Tab::make(__('tabs.basic'))
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label(__('fields.name'))
                     ->required(),
             ]),
 
-        Forms\Components\Tabs\Tab::make(__('tabs.settings'))
+        Schemas\Components\Tabs\Tab::make(__('tabs.settings'))
             ->schema([
                 Forms\Components\Toggle::make('is_active')
                     ->label(__('fields.is_active')),
@@ -542,48 +543,51 @@ namespace App\Filament\Owner\Resources\BusinessResource\Schemas;
 
 use App\Enums\BusinessTypeEnum;
 use Filament\Forms;
+use Filament\Schemas;
+use Filament\Schemas\Schema;
 
 final class BusinessForm
 {
-    public static function make(): array
+    public static function configure(Schema $schema): Schema
     {
-        return [
-            Forms\Components\Section::make()
-                ->heading(__('messages.basic_information'))
-                ->schema([
-                    Forms\Components\TextInput::make('name')
-                        ->label(__('fields.name'))
-                        ->required()
-                        ->maxLength(255),
+        return $schema
+            ->components([
+                Schemas\Components\Section::make()
+                    ->heading(__('messages.basic_information'))
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label(__('fields.name'))
+                            ->required()
+                            ->maxLength(255),
 
-                    Forms\Components\Select::make('type')
-                        ->label(__('fields.type'))
-                        ->options(BusinessTypeEnum::toSelectArray())
-                        ->required(),
+                        Forms\Components\Select::make('type')
+                            ->label(__('fields.type'))
+                            ->options(BusinessTypeEnum::toSelectArray())
+                            ->required(),
 
-                    Forms\Components\TextInput::make('email')
-                        ->label(__('fields.email'))
-                        ->email()
-                        ->maxLength(255),
+                        Forms\Components\TextInput::make('email')
+                            ->label(__('fields.email'))
+                            ->email()
+                            ->maxLength(255),
 
-                    Forms\Components\TextInput::make('phone')
-                        ->label(__('fields.phone'))
-                        ->tel()
-                        ->maxLength(20),
+                        Forms\Components\TextInput::make('phone')
+                            ->label(__('fields.phone'))
+                            ->tel()
+                            ->maxLength(20),
 
-                    Forms\Components\Toggle::make('is_active')
-                        ->label(__('fields.is_active'))
-                        ->default(true),
-                ])
-                ->columns(2),
-        ];
+                        Forms\Components\Toggle::make('is_active')
+                            ->label(__('fields.is_active'))
+                            ->default(true),
+                    ])
+                    ->columns(2),
+            ]);
     }
 }
 
 // Usage in Resource
-public static function form(Form $form): Form
+public static function form(Schema $schema): Schema
 {
-    return $form->schema(BusinessForm::make());
+    return BusinessForm::configure($schema);
 }
 ```
 
@@ -782,82 +786,6 @@ it('can bulk activate businesses', function () {
 });
 ```
 
-## Critical API & Import Rules
-
-### ✅ CORRECT - Form Schema API (Filament v4)
-
-```php
-<?php
-
-// ✅ CORRECT - Using Form type and schema() method
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
-
-final class UserForm
-{
-    public static function configure(Form $form): Form
-    {
-        return $form->schema([
-            Section::make()
-                ->schema([
-                    TextInput::make('name')->required(),
-                ]),
-        ]);
-    }
-}
-
-// Usage in Resource
-public static function form(Form $form): Form
-{
-    return UserForm::configure($form);
-}
-```
-
-### ❌ WRONG - Using incompatible Schema types
-
-```php
-<?php
-
-// ❌ WRONG - These types don't exist in Filament v4
-use Filament\Schemas\Schema;           // Does not exist
-use Filament\Schemas\Components\Section; // Wrong namespace
-
-public static function configure(Schema $schema): Schema  // Wrong type
-{
-    return $schema->components([...]);  // Wrong method (.schema() not .components())
-}
-```
-
-### ✅ CORRECT - Table Actions Import
-
-```php
-<?php
-
-// ✅ CORRECT - Import from Filament\Tables\Actions
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-
-public static function actions(): array
-{
-    return [
-        EditAction::make(),
-    ];
-}
-```
-
-### ❌ WRONG - Importing from wrong namespace
-
-```php
-<?php
-
-// ❌ WRONG - These imports will fail at runtime
-use Filament\Actions\BulkActionGroup;     // Wrong namespace
-use Filament\Actions\DeleteBulkAction;    // Wrong namespace
-use Filament\Actions\EditAction;          // Wrong namespace
-```
-
 ## Security Best Practices
 
 ### Prevent Self-Deletion in Edit Pages
@@ -919,8 +847,6 @@ return [
 - Use descriptive action names and icons
 - Test all CRUD operations
 - Use notifications for user feedback
-- **Use correct imports:** `Filament\Tables\Actions` for table actions
-- **Use correct types:** `Filament\Forms\Form` for form schemas
 - **Prevent self-deletion** in edit pages with `->hidden()`
 - **Require confirmation** for destructive actions with `->requiresConfirmation()`
 
@@ -935,9 +861,6 @@ return [
 - Don't use inline styles
 - Don't skip validation
 - Don't forget loading states
-- **Don't import table actions from `Filament\Actions`** (use `Filament\Tables\Actions`)
-- **Don't use `Schema` type** for forms (use `Form` type)
-- **Don't use `->components()`** method (use `->schema()`)
 - **Don't allow self-deletion** without protection
 - **Don't skip confirmation** on delete actions
 
@@ -967,7 +890,7 @@ final class BusinessResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-building-office';
 
     public static function getNavigationLabel(): string { return __('navigation.businesses'); }
-    public static function form(Form $form): Form { /* schema */ }
+    public static function form(Schema $schema): Schema { /* components */ }
     public static function table(Table $table): Table { /* schema */ }
     public static function getEloquentQuery(): Builder { /* tenant scoping */ }
 }
@@ -984,7 +907,7 @@ Tables\Columns\TextColumn::make('name')
     ->sortable();
 
 // Action
-Tables\Actions\Action::make('activate')
+Actions\Action::make('activate')
     ->label(__('messages.activate'))
     ->action(fn ($record) => $record->update(['is_active' => true]));
 

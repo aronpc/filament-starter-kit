@@ -20,6 +20,9 @@ final class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            return;
+        }
         // Reset cached roles and permissions
         app()->make(PermissionRegistrar::class)->forgetCachedPermissions();
 

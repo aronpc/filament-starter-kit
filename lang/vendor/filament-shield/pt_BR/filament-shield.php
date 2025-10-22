@@ -62,18 +62,18 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    // 'resource_permission_prefixes_labels' => [
-    //     'view' => 'View',
-    //     'view_any' => 'View Any',
-    //     'create' => 'Create',
-    //     'update' => 'Update',
-    //     'delete' => 'Delete',
-    //     'delete_any' => 'Delete Any',
-    //     'force_delete' => 'Force Delete',
-    //     'force_delete_any' => 'Force Delete Any',
-    //     'restore' => 'Restore',
-    //     'reorder' => 'Reorder',
-    //     'restore_any' => 'Restore Any',
-    //     'replicate' => 'Replicate',
-    // ],
+    'resource_permission_prefixes_labels' => [
+        'view' => 'Visualizar',
+        'view_any' => 'Visualizar Qualquer',
+        'create' => 'Criar',
+        'update' => 'Atualizar',
+        'delete' => 'Excluir',
+        'delete_any' => 'Excluir Qualquer',
+        'force_delete' => 'Excluir Permanentemente',
+        'force_delete_any' => 'Excluir Qualquer Permanentemente',
+        'restore' => 'Restaurar',
+        'reorder' => 'Reordenar',
+        'restore_any' => 'Restaurar Qualquer',
+        'replicate' => 'Replicar',
+    ],
 ];
