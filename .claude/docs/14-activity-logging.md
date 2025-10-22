@@ -629,12 +629,133 @@ it('can search activities by description', function () {
 });
 ```
 
+## Privacy & PII Best Practices
+
+### Avoid Logging Sensitive Personal Information (PII)
+
+**CRITICAL:** Be extremely careful about what you log. Logging PII can violate privacy laws (GDPR, CCPA, etc.) and create security risks.
+
+### ❌ DON'T Log PII
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+
+final class User extends Authenticatable
+{
+    use LogsActivity;
+
+    // ❌ WRONG - Logging email exposes PII
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'email_verified_at']) // Don't log 'email'
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+}
+```
+
+### ✅ DO - Exclude Sensitive Fields
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
+
+final class User extends Authenticatable
+{
+    use LogsActivity;
+
+    // ✅ CORRECT - Only log safe, non-PII fields
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email_verified_at']) // Removed 'email'
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('user')
+            ->setDescriptionForEvent(fn (string $eventName): string => "User {$eventName}");
+    }
+}
+```
+
+### Sensitive Fields to Avoid Logging
+
+| Field Type          | Examples                                      | Why                               |
+|---------------------|-----------------------------------------------|-----------------------------------|
+| **Email Addresses** | `email`, `secondary_email`                    | Personal identifier, GDPR concern |
+| **Phone Numbers**   | `phone`, `mobile`, `emergency_contact`        | Personal identifier               |
+| **Passwords**       | `password`, `password_hash`                   | Security risk                     |
+| **Tokens**          | `api_token`, `remember_token`, `reset_token`  | Security risk                     |
+| **SSN/Tax IDs**     | `ssn`, `tax_id`, `national_id`                | Highly sensitive PII              |
+| **Credit Cards**    | `card_number`, `cvv`, `expiry`                | PCI compliance                    |
+| **Addresses**       | `street_address`, `postal_code` (sometimes)   | Personal identifier               |
+| **IP Addresses**    | `ip_address`, `last_login_ip`                 | Personal identifier (GDPR)        |
+| **Biometric Data**  | `fingerprint`, `face_id`                      | Highly sensitive PII              |
+
+### Safe Fields to Log
+
+✅ Non-identifying metadata: `is_active`, `is_verified`, `status` \
+✅ Timestamps: `created_at`, `updated_at`, `verified_at` \
+✅ Counts/metrics: `login_count`, `orders_count` \
+✅ Preferences: `theme`, `language`, `timezone` \
+✅ Display names: `name`, `username` (if not unique identifier)
+
+### Alternative Approaches
+
+If you need to track changes to sensitive fields without logging the actual values:
+
+```php
+<?php
+
+public function getActivitylogOptions(): LogOptions
+{
+    return LogOptions::defaults()
+        ->logOnly(['name', 'email_verified_at'])
+        ->logOnlyDirty()
+        ->dontSubmitEmptyLogs()
+        ->dontLogIfAttributesChangedOnly(['email', 'phone']) // Track that it changed, but don't log values
+        ->useLogName('user')
+        ->setDescriptionForEvent(fn (string $eventName): string => "User {$eventName}");
+}
+```
+
+Or log a flag indicating the change:
+
+```php
+<?php
+
+// In Observer
+public function updated(User $user): void
+{
+    if ($user->isDirty('email')) {
+        activity()
+            ->performedOn($user)
+            ->withProperty('email_changed', true) // Flag only, not the actual email
+            ->log('User email updated');
+    }
+}
+```
+
 ## Best Practices
 
 ### ✅ DO
 
 - Use `LogsActivity` trait for models that need automatic logging
 - Configure `logOnly()` to avoid logging sensitive data
+- **Exclude PII (email, phone, addresses, SSN, etc.) from logs**
 - Use `logOnlyDirty()` to reduce log volume
 - Use custom log names (`useLogName()`) to organize logs
 - Add contextual properties with `withProperties()`
@@ -642,10 +763,12 @@ it('can search activities by description', function () {
 - Scope Activity resource to tenants for multi-tenancy
 - Use policies to restrict who can view/delete activity logs
 - Create translated messages for all supported languages
+- **Review data privacy laws (GDPR, CCPA) before logging user data**
 
 ### ❌ DON'T
 
 - Don't log sensitive data (passwords, tokens, credit cards)
+- **Don't log PII (email, phone, addresses, SSN, IP addresses)**
 - Don't use `logAll()` on models with many fields
 - Don't forget to configure `logOnly()` fields
 - Don't allow regular users to delete activity logs
@@ -653,6 +776,7 @@ it('can search activities by description', function () {
 - Don't log every single attribute change (be selective)
 - Don't forget to add indexes to `activity_log` table for performance
 - Don't expose activity logs without proper authorization
+- **Don't log data that could violate privacy regulations**
 
 ## Performance Optimization
 
