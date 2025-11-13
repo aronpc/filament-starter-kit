@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-**Guia de regras e padrões do projeto para Claude Code**
+**Rules and Patterns Guide for Claude Code Project**
 
 <filament-core-startkit-guidelines>
 

@@ -37,3 +37,4 @@ bun.lockb
 /clover.xml
 /coverage.xml
 !.claude/**
+/CLAUDE.md
