@@ -36,3 +36,4 @@ bun.lockb
 !/docker/database/redis/.gitkeep
 /clover.xml
 /coverage.xml
+!.claude/**
