@@ -6,7 +6,7 @@
 
 - **Always use HasEnumFeatures trait** - Provides all ArchTech Enums functionality
 - **Type Safety** - Leverage strict comparisons with `is()`, `isNot()`, `in()`, `notIn()`
-- **Naming Convention** - Naming Convention: Use descriptive names without prefix or suffix (following Spatie guidelines) (e.g., `UserRoleEnum`, `OrderStatus`)
+- **Naming Convention** - Use descriptive names without prefix or suffix (following Spatie guidelines) (e.g., `UserRole`, `OrderStatus`)
 - **Translation** - Implement `label()` method using `__()`
 - **Filament Integration** - Implement `HasLabel` and `HasColor` for Filament resources
 - **Value Objects** - Use backed enums (string/int) for database storage
@@ -539,7 +539,7 @@ final class Priority extends MetaProperty
 }
 
 // Use in enum
-enum TaskStatusEnum: string
+enum TaskStatus: string
 {
     use HasEnumFeatures;
 
@@ -557,12 +557,12 @@ enum TaskStatusEnum: string
 }
 
 // Access metadata
-$status = TaskStatusEnum::Urgent;
+$status = TaskStatus::Urgent;
 $priority = $status->priority(); // 1
 
 // Find by metadata
-$urgent = TaskStatusEnum::fromMeta(new Priority(1)); // TaskStatusEnum::Urgent
-$high = TaskStatusEnum::tryFromMeta(new Priority(2)); // TaskStatusEnum::High
+$urgent = TaskStatus::fromMeta(new Priority(1)); // TaskStatus::Urgent
+$high = TaskStatus::tryFromMeta(new Priority(2)); // TaskStatus::High
 ```
 
 **Method Reference:**
@@ -626,7 +626,7 @@ public function getStatusFromCode(int $code): ?ApiResponseEnum
 
 - **Always use `HasEnumFeatures` trait** in all enums
 - **Use `is()`, `isNot()`, `in()`, `notIn()`** for comparisons (NEVER `===` or `==`)
-- **Use descriptive names without suffix (following Spatie guidelines)** (e.g., `UserRoleEnum`, `OrderStatus`)
+- **Use descriptive names without suffix (following Spatie guidelines)** (e.g., `UserRole`, `OrderStatus`)
 - **Implement `label()` method** using `__()` for translations
 - **Implement `HasLabel` and `HasColor`** for Filament integration
 - **Use backed enums** (string/int) for database storage
