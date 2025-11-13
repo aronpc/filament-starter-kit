@@ -6,7 +6,7 @@
 
 - **Always use HasEnumFeatures trait** - Provides all ArchTech Enums functionality
 - **Type Safety** - Leverage strict comparisons with `is()`, `isNot()`, `in()`, `notIn()`
-- **Naming Convention** - All Enums MUST end with `Enum` suffix (e.g., `UserRoleEnum`, `OrderStatusEnum`)
+- **Naming Convention** - Naming Convention: Use descriptive names without prefix or suffix (following Spatie guidelines) (e.g., `UserRoleEnum`, `OrderStatus`)
 - **Translation** - Implement `label()` method using `__()`
 - **Filament Integration** - Implement `HasLabel` and `HasColor` for Filament resources
 - **Value Objects** - Use backed enums (string/int) for database storage
@@ -60,24 +60,24 @@ trait HasEnumFeatures
 <?php
 
 // ✅ CORRECT - Using Comparable methods
-if ($status->is(OrderStatusEnum::Pending)) {
+if ($status->is(OrderStatus::Pending)) {
     // Handle pending order
 }
 
-if ($status->isNot(OrderStatusEnum::Cancelled)) {
+if ($status->isNot(OrderStatus::Cancelled)) {
     // Process non-cancelled order
 }
 
-if ($status->in([OrderStatusEnum::Pending, OrderStatusEnum::Confirmed])) {
+if ($status->in([OrderStatus::Pending, OrderStatus::Confirmed])) {
     // Handle pending or confirmed
 }
 
-if ($status->notIn([OrderStatusEnum::Delivered, OrderStatusEnum::Cancelled])) {
+if ($status->notIn([OrderStatus::Delivered, OrderStatus::Cancelled])) {
     // Handle active orders
 }
 
 // ❌ WRONG - Direct comparison
-if ($status === OrderStatusEnum::Pending) { } // Don't do this
+if ($status === OrderStatus::Pending) { } // Don't do this
 if ($status == 'pending') { } // Never do this
 ```
 
@@ -101,7 +101,7 @@ namespace App\Enums;
 
 use App\Contracts\HasEnumFeatures;
 
-enum OrderStatusEnum: string
+enum OrderStatus: string
 {
     use HasEnumFeatures;
 
@@ -156,15 +156,15 @@ enum OrderStatusEnum: string
 ```php
 <?php
 
-use App\Enums\OrderStatusEnum;
+use App\Enums\OrderStatus;
 
 // ✅ CORRECT - Comparison in controller
 public function update(Order $order, UpdateOrderRequest $request): RedirectResponse
 {
-    $newStatus = OrderStatusEnum::from($request->status);
+    $newStatus = OrderStatus::from($request->status);
 
     // Using is() to check current status
-    if ($order->status->is(OrderStatusEnum::Delivered)) {
+    if ($order->status->is(OrderStatus::Delivered)) {
         throw new Exception('Cannot update delivered order');
     }
 
@@ -182,7 +182,7 @@ public function update(Order $order, UpdateOrderRequest $request): RedirectRespo
 public function getActiveOrders(): Collection
 {
     return Order::query()
-        ->whereIn('status', OrderStatusEnum::values())
+        ->whereIn('status', OrderStatus::values())
         ->get()
         ->filter(fn ($order) => $order->status->isActive());
 }
@@ -191,8 +191,8 @@ public function getActiveOrders(): Collection
 public function canEditOrder(Order $order): bool
 {
     return $order->status->notIn([
-        OrderStatusEnum::Delivered,
-        OrderStatusEnum::Cancelled,
+        OrderStatus::Delivered,
+        OrderStatus::Cancelled,
     ]);
 }
 ```
@@ -207,16 +207,16 @@ public function canEditOrder(Order $order): bool
 <?php
 
 // ✅ from() - Create from value (throws ValueError if not found)
-$status = OrderStatusEnum::from('pending');
+$status = OrderStatus::from('pending');
 
 // ✅ tryFrom() - Safe version, returns null if not found
-$status = OrderStatusEnum::tryFrom('invalid'); // null
+$status = OrderStatus::tryFrom('invalid'); // null
 
 // ✅ fromName() - Create from case name (throws ValueError if not found)
-$status = OrderStatusEnum::fromName('Pending');
+$status = OrderStatus::fromName('Pending');
 
 // ✅ tryFromName() - Safe version, returns null if not found
-$status = OrderStatusEnum::tryFromName('Invalid'); // null
+$status = OrderStatus::tryFromName('Invalid'); // null
 ```
 
 **Method Reference:**
@@ -237,7 +237,7 @@ $status = OrderStatusEnum::tryFromName('Invalid'); // null
 public function store(Request $request): RedirectResponse
 {
     // ✅ CORRECT - Using from() with validation
-    $type = BusinessTypeEnum::from($request->type);
+    $type = BusinessType::from($request->type);
 
     $business = Business::create([
         'type' => $type,
@@ -252,7 +252,7 @@ public function rules(): array
 {
     return [
         // ✅ CORRECT - Validation rule with values()
-        'status' => ['required', 'in:' . implode(',', OrderStatusEnum::values())],
+        'status' => ['required', 'in:' . implode(',', OrderStatus::values())],
     ];
 }
 
@@ -260,7 +260,7 @@ public function rules(): array
 public function updateStatus(Request $request): JsonResponse
 {
     // ✅ CORRECT - Using tryFrom() for safe conversion
-    $status = OrderStatusEnum::tryFrom($request->status);
+    $status = OrderStatus::tryFrom($request->status);
 
     if (!$status) {
         return response()->json(['error' => 'Invalid status'], 422);
@@ -274,7 +274,7 @@ public function updateStatus(Request $request): JsonResponse
 public function createFromApi(array $data): Business
 {
     // ✅ CORRECT - Using fromName() when API uses case names
-    $type = BusinessTypeEnum::fromName($data['businessType']);
+    $type = BusinessType::fromName($data['businessType']);
 
     return Business::create(['type' => $type]);
 }
@@ -290,7 +290,7 @@ public function createFromApi(array $data): Business
 <?php
 
 // ✅ values() - Get array of all case values
-$values = OrderStatusEnum::values();
+$values = OrderStatus::values();
 // ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled']
 
 // For pure enums (no backing value), returns case names
@@ -313,28 +313,28 @@ $names = PureEnum::values();
 public function rules(): array
 {
     return [
-        'status' => ['required', 'in:' . implode(',', OrderStatusEnum::values())],
-        'type' => ['required', Rule::in(BusinessTypeEnum::values())],
+        'status' => ['required', 'in:' . implode(',', OrderStatus::values())],
+        'type' => ['required', Rule::in(BusinessType::values())],
     ];
 }
 
 // ✅ Database query
 public function getActiveOrders(): Collection
 {
-    return Order::whereIn('status', OrderStatusEnum::values())->get();
+    return Order::whereIn('status', OrderStatus::values())->get();
 }
 
 // ✅ Checking if value is valid
 public function isValidStatus(string $status): bool
 {
-    return in_array($status, OrderStatusEnum::values(), true);
+    return in_array($status, OrderStatus::values(), true);
 }
 
 // ✅ API response
 public function getAvailableStatuses(): JsonResponse
 {
     return response()->json([
-        'statuses' => OrderStatusEnum::values(),
+        'statuses' => OrderStatus::values(),
     ]);
 }
 ```
@@ -349,7 +349,7 @@ public function getAvailableStatuses(): JsonResponse
 <?php
 
 // ✅ names() - Get array of all case names
-$names = OrderStatusEnum::names();
+$names = OrderStatus::names();
 // ['Pending', 'Confirmed', 'Preparing', 'Ready', 'Delivered', 'Cancelled']
 ```
 
@@ -366,23 +366,23 @@ $names = OrderStatusEnum::names();
 
 // ✅ Debugging/Logging
 Log::info('Available statuses', [
-    'names' => OrderStatusEnum::names(),
-    'values' => OrderStatusEnum::values(),
+    'names' => OrderStatus::names(),
+    'values' => OrderStatus::values(),
 ]);
 
 // ✅ Documentation generation
 public function getEnumDocumentation(): array
 {
     return [
-        'enum' => OrderStatusEnum::class,
-        'cases' => OrderStatusEnum::names(),
-        'values' => OrderStatusEnum::values(),
+        'enum' => OrderStatus::class,
+        'cases' => OrderStatus::names(),
+        'values' => OrderStatus::values(),
     ];
 }
 
 // ✅ Testing
 it('has all expected case names', function () {
-    $names = OrderStatusEnum::names();
+    $names = OrderStatus::names();
 
     expect($names)->toContain('Pending', 'Confirmed', 'Delivered');
 });
@@ -398,7 +398,7 @@ it('has all expected case names', function () {
 <?php
 
 // ✅ options() - Get [case name => case value]
-$options = OrderStatusEnum::options();
+$options = OrderStatus::options();
 // [
 //     'Pending' => 'pending',
 //     'Confirmed' => 'confirmed',
@@ -409,13 +409,13 @@ $options = OrderStatusEnum::options();
 // ]
 
 // ✅ stringOptions() - Generate HTML options
-$html = OrderStatusEnum::stringOptions();
+$html = OrderStatus::stringOptions();
 // <option value="pending">Pending</option>
 // <option value="confirmed">Confirmed</option>
 // ...
 
 // Custom format
-$html = OrderStatusEnum::stringOptions(
+$html = OrderStatus::stringOptions(
     callback: fn($name, $value) => "<option value=\"{$value}\" data-name=\"{$name}\">{$name}</option>",
     glue: "\n"
 );
@@ -435,7 +435,7 @@ $html = OrderStatusEnum::stringOptions(
 
 // ✅ Blade select dropdown (traditional approach)
 <select name="status">
-    @foreach(OrderStatusEnum::options() as $name => $value)
+    @foreach(OrderStatus::options() as $name => $value)
         <option value="{{ $value }}">{{ __("enums.order_status.{$value}") }}</option>
     @endforeach
 </select>
@@ -445,7 +445,7 @@ Forms\Components\Select::make('status')
     ->label(__('fields.status'))
     ->options(function () {
         // Convert to [value => label] format
-        return collect(OrderStatusEnum::cases())
+        return collect(OrderStatus::cases())
             ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
             ->toArray();
     });
@@ -453,7 +453,7 @@ Forms\Components\Select::make('status')
 // ✅ API endpoint
 public function getStatusOptions(): JsonResponse
 {
-    $options = collect(OrderStatusEnum::cases())
+    $options = collect(OrderStatus::cases())
         ->map(fn ($case) => [
             'value' => $case->value,
             'label' => $case->label(),
@@ -466,7 +466,7 @@ public function getStatusOptions(): JsonResponse
 
 // ✅ Testing
 it('has correct options structure', function () {
-    $options = OrderStatusEnum::options();
+    $options = OrderStatus::options();
 
     expect($options)
         ->toBeArray()
@@ -485,12 +485,12 @@ it('has correct options structure', function () {
 <?php
 
 // ✅ __invoke() - Get value by invoking enum instance
-$status = OrderStatusEnum::Pending;
+$status = OrderStatus::Pending;
 $value = $status(); // 'pending'
 
 // ✅ __callStatic() - Get value by calling case as static method
-$value = OrderStatusEnum::Pending(); // 'pending'
-$value = OrderStatusEnum::Confirmed(); // 'confirmed'
+$value = OrderStatus::Pending(); // 'pending'
+$value = OrderStatus::Confirmed(); // 'confirmed'
 ```
 
 **Method Reference:**
@@ -506,17 +506,17 @@ $value = OrderStatusEnum::Confirmed(); // 'confirmed'
 <?php
 
 // ✅ Quick value access
-$pendingValue = OrderStatusEnum::Pending(); // 'pending'
+$pendingValue = OrderStatus::Pending(); // 'pending'
 
 // ✅ In array mapping
 $values = array_map(
     fn($case) => $case(),
-    OrderStatusEnum::cases()
+    OrderStatus::cases()
 );
 
 // ⚠️ NOTE: This is less common in modern PHP.
 // Prefer explicit ->value access for clarity:
-$value = OrderStatusEnum::Pending->value; // More explicit
+$value = OrderStatus::Pending->value; // More explicit
 ```
 
 ---
@@ -626,7 +626,7 @@ public function getStatusFromCode(int $code): ?ApiResponseEnum
 
 - **Always use `HasEnumFeatures` trait** in all enums
 - **Use `is()`, `isNot()`, `in()`, `notIn()`** for comparisons (NEVER `===` or `==`)
-- **End all enum names with `Enum` suffix** (e.g., `UserRoleEnum`, `OrderStatusEnum`)
+- **Use descriptive names without suffix (following Spatie guidelines)** (e.g., `UserRoleEnum`, `OrderStatus`)
 - **Implement `label()` method** using `__()` for translations
 - **Implement `HasLabel` and `HasColor`** for Filament integration
 - **Use backed enums** (string/int) for database storage
@@ -639,7 +639,7 @@ public function getStatusFromCode(int $code): ?ApiResponseEnum
 
 - Don't use direct comparison operators (`===`, `==`, `!=`)
 - Don't forget to add `HasEnumFeatures` trait
-- Don't create enums without the `Enum` suffix
+- Don't use suffixes in enum names (follow Spatie guidelines)
 - Don't hardcode enum values - use enum cases
 - Don't skip translation in `label()` method
 - Don't use magic values instead of enum cases
@@ -661,7 +661,7 @@ use App\Contracts\HasEnumFeatures;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
-enum OrderStatusEnum: string implements HasColor, HasLabel
+enum OrderStatus: string implements HasColor, HasLabel
 {
     use HasEnumFeatures;
 
@@ -675,7 +675,7 @@ enum OrderStatusEnum: string implements HasColor, HasLabel
     /**
      * Get translated label.
      */
-    public function getLabel(): string
+    public function label(): string
     {
         return match ($this) {
             self::Pending => __('enums.order_status.pending'),
@@ -772,49 +772,49 @@ enum OrderStatusEnum: string implements HasColor, HasLabel
 ```php
 <?php
 
-use App\Enums\OrderStatusEnum;
+use App\Enums\OrderStatus;
 
 // Test Comparable methods
 it('uses is() for comparison', function () {
-    $status = OrderStatusEnum::Pending;
+    $status = OrderStatus::Pending;
 
-    expect($status->is(OrderStatusEnum::Pending))->toBeTrue()
-        ->and($status->isNot(OrderStatusEnum::Confirmed))->toBeTrue();
+    expect($status->is(OrderStatus::Pending))->toBeTrue()
+        ->and($status->isNot(OrderStatus::Confirmed))->toBeTrue();
 });
 
 it('uses in() for multiple checks', function () {
-    $status = OrderStatusEnum::Pending;
+    $status = OrderStatus::Pending;
 
-    expect($status->in([OrderStatusEnum::Pending, OrderStatusEnum::Confirmed]))->toBeTrue()
-        ->and($status->notIn([OrderStatusEnum::Delivered, OrderStatusEnum::Cancelled]))->toBeTrue();
+    expect($status->in([OrderStatus::Pending, OrderStatus::Confirmed]))->toBeTrue()
+        ->and($status->notIn([OrderStatus::Delivered, OrderStatus::Cancelled]))->toBeTrue();
 });
 
 // Test custom methods
 it('checks status transition', function () {
-    $pending = OrderStatusEnum::Pending;
-    $confirmed = OrderStatusEnum::Confirmed;
-    $delivered = OrderStatusEnum::Delivered;
+    $pending = OrderStatus::Pending;
+    $confirmed = OrderStatus::Confirmed;
+    $delivered = OrderStatus::Delivered;
 
     expect($pending->canTransitionTo($confirmed))->toBeTrue()
         ->and($delivered->canTransitionTo($pending))->toBeFalse();
 });
 
 it('identifies final statuses', function () {
-    expect(OrderStatusEnum::Delivered->isFinal())->toBeTrue()
-        ->and(OrderStatusEnum::Cancelled->isFinal())->toBeTrue()
-        ->and(OrderStatusEnum::Pending->isFinal())->toBeFalse();
+    expect(OrderStatus::Delivered->isFinal())->toBeTrue()
+        ->and(OrderStatus::Cancelled->isFinal())->toBeTrue()
+        ->and(OrderStatus::Pending->isFinal())->toBeFalse();
 });
 
 // Test values() and names()
 it('returns all values', function () {
-    $values = OrderStatusEnum::values();
+    $values = OrderStatus::values();
 
     expect($values)->toBeArray()
         ->and($values)->toContain('pending', 'confirmed', 'delivered');
 });
 
 it('returns all case names', function () {
-    $names = OrderStatusEnum::names();
+    $names = OrderStatus::names();
 
     expect($names)->toBeArray()
         ->and($names)->toContain('Pending', 'Confirmed', 'Delivered');
@@ -822,14 +822,14 @@ it('returns all case names', function () {
 
 // Test from() methods
 it('creates enum from value', function () {
-    $status = OrderStatusEnum::from('pending');
+    $status = OrderStatus::from('pending');
 
-    expect($status)->toBeInstanceOf(OrderStatusEnum::class)
-        ->and($status->is(OrderStatusEnum::Pending))->toBeTrue();
+    expect($status)->toBeInstanceOf(OrderStatus::class)
+        ->and($status->is(OrderStatus::Pending))->toBeTrue();
 });
 
 it('returns null for invalid value with tryFrom', function () {
-    $status = OrderStatusEnum::tryFrom('invalid');
+    $status = OrderStatus::tryFrom('invalid');
 
     expect($status)->toBeNull();
 });
@@ -838,18 +838,18 @@ it('returns null for invalid value with tryFrom', function () {
 it('returns translated labels', function () {
     app()->setLocale('en');
 
-    expect(OrderStatusEnum::Pending->getLabel())->toBe('Pending');
+    expect(OrderStatus::Pending->label())->toBe('Pending');
 
     app()->setLocale('es');
 
-    expect(OrderStatusEnum::Pending->getLabel())->toBe('Pendiente');
+    expect(OrderStatus::Pending->label())->toBe('Pendiente');
 });
 
 // Test Filament integration
 it('returns correct colors', function () {
-    expect(OrderStatusEnum::Pending->getColor())->toBe('warning')
-        ->and(OrderStatusEnum::Delivered->getColor())->toBe('success')
-        ->and(OrderStatusEnum::Cancelled->getColor())->toBe('danger');
+    expect(OrderStatus::Pending->getColor())->toBe('warning')
+        ->and(OrderStatus::Delivered->getColor())->toBe('success')
+        ->and(OrderStatus::Cancelled->getColor())->toBe('danger');
 });
 ```
 
@@ -860,7 +860,7 @@ it('returns correct colors', function () {
 Before finalizing ANY enum:
 
 - [ ] Uses `HasEnumFeatures` trait
-- [ ] Ends with `Enum` suffix
+- [ ] Uses descriptive name without suffix (following Spatie guidelines)
 - [ ] Uses `is()`, `isNot()`, `in()`, `notIn()` for comparisons
 - [ ] Implements `label()` with `__()`
 - [ ] Implements `HasLabel` interface (for Filament)
@@ -877,24 +877,24 @@ Before finalizing ANY enum:
 
 ```php
 // ✅ Comparison
-if ($status->is(OrderStatusEnum::Pending)) { }
-if ($status->in([OrderStatusEnum::Pending, OrderStatusEnum::Confirmed])) { }
+if ($status->is(OrderStatus::Pending)) { }
+if ($status->in([OrderStatus::Pending, OrderStatus::Confirmed])) { }
 
 // ✅ Creation
-$status = OrderStatusEnum::from('pending');
-$status = OrderStatusEnum::tryFrom($value);
+$status = OrderStatus::from('pending');
+$status = OrderStatus::tryFrom($value);
 
 // ✅ Arrays
-$values = OrderStatusEnum::values(); // ['pending', 'confirmed', ...]
-$names = OrderStatusEnum::names();   // ['Pending', 'Confirmed', ...]
-$options = OrderStatusEnum::options(); // ['Pending' => 'pending', ...]
+$values = OrderStatus::values(); // ['pending', 'confirmed', ...]
+$names = OrderStatus::names();   // ['Pending', 'Confirmed', ...]
+$options = OrderStatus::options(); // ['Pending' => 'pending', ...]
 
 // ✅ Validation
-Rule::in(OrderStatusEnum::values())
+Rule::in(OrderStatus::values())
 
 // ✅ Filament Select
 Forms\Components\Select::make('status')
-    ->options(fn () => collect(OrderStatusEnum::cases())
+    ->options(fn () => collect(OrderStatus::cases())
         ->mapWithKeys(fn ($case) => [$case->value => $case->label()])
     );
 ```
