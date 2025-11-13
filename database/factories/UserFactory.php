@@ -44,4 +44,47 @@ final class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Create an admin user with super_admin role.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
+        ])->afterCreating(function (User $user): void {
+            $user->assignRole('super_admin');
+        });
+    }
+
+    /**
+     * Create a user with a specific password.
+     */
+    public function withPassword(string $password): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'password' => Hash::make($password),
+        ]);
+    }
+
+    /**
+     * Create a user with a specific email.
+     */
+    public function withEmail(string $email): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'email' => $email,
+        ]);
+    }
+
+    /**
+     * Create a soft-deleted user.
+     */
+    public function trashed(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'deleted_at' => now(),
+        ]);
+    }
 }

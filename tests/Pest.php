@@ -13,6 +13,7 @@ declare(strict_types=1);
 |
 */
 
+use App\Models\User;
 use Illuminate\Support\Sleep;
 
 pest()->extend(Tests\TestCase::class)
@@ -51,7 +52,85 @@ expect()->extend('toBeOne', fn () => $this->toBe(1));
 |
 */
 
-function something(): void
+/**
+ * Create a user and authenticate them.
+ */
+function login(?User $user = null): User
 {
-    // ..
+    $user ??= User::factory()->create();
+
+    actingAs($user);
+
+    return $user;
+}
+
+/**
+ * Create an admin user with super_admin role and authenticate them.
+ */
+function loginAsAdmin(): User
+{
+    $user = User::factory()->admin()->create();
+
+    actingAs($user);
+
+    return $user;
+}
+
+/**
+ * Create a user with specific role and authenticate them.
+ */
+function loginAsRole(string $role): User
+{
+    $user = User::factory()->create();
+    $user->assignRole($role);
+
+    actingAs($user);
+
+    return $user;
+}
+
+/**
+ * Assert that the database has a record with the given attributes.
+ */
+function assertDatabaseHasRecord(string $table, array $attributes): void
+{
+    assertDatabaseHas($table, $attributes);
+}
+
+/**
+ * Assert that the database does not have a record with the given attributes.
+ */
+function assertDatabaseMissingRecord(string $table, array $attributes): void
+{
+    assertDatabaseMissing($table, $attributes);
+}
+
+/**
+ * Assert that the database has a specific count of records.
+ */
+function assertDatabaseCountRecords(string $table, int $count): void
+{
+    assertDatabaseCount($table, $count);
+}
+
+/**
+ * Create model with factory and optional state.
+ */
+function create(string $model, array $attributes = [], int $count = 1)
+{
+    $factory = $model::factory();
+
+    if ($attributes !== []) {
+        $factory = $factory->state($attributes);
+    }
+
+    return $count === 1 ? $factory->create() : $factory->count($count)->create();
+}
+
+/**
+ * Create multiple records of the same model.
+ */
+function createMany(string $model, int $count, array $attributes = [])
+{
+    return create($model, $attributes, $count);
 }

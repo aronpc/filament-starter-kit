@@ -69,6 +69,10 @@ npm run build                 # Build de produção
 php artisan filament:user               # Criar usuário
 php artisan shield:super-admin          # Criar super admin
 php artisan shield:generate --all      # Gerar permissões para recursos
+
+# Documentação
+php artisan sync:ai-guidelines          # Sincronizar documentos guia do repositório público
+php artisan sync:ai-guidelines --force  # Forçar sincronização sobrescrevendo arquivos existentes
 ```
 
 ## Estrutura
@@ -123,6 +127,13 @@ php artisan shield:generate --all      # Gerar permissões para recursos
 - ✅ Log customizado em models (trait LogsActivity)
 - ✅ Visualização de logs no Admin Panel
 - ✅ Agrupado em "User Management"
+
+### AI Guidelines Sync
+- ✅ Sincronização automática de documentos guia do repositório público
+- ✅ Download de arquivos .md do GitHub API
+- ✅ Atualização automática do CLAUDE.md com referências
+- ✅ Modo force para sobrescrever arquivos existentes
+- ✅ Organização alfabética dos documentos
 
 ### Code Quality & Architecture
 - ✅ Architecture tests com Pest
@@ -310,6 +321,43 @@ activity()
 ```
 
 Para mais detalhes, consulte `.claude/docs/14-activity-logging.md`.
+
+## AI Guidelines Sync
+
+O projeto inclui um comando para sincronizar automaticamente documentos guia do repositório público `filament-core-starter-kit`:
+
+```bash
+# Sincronizar documentos (apenas novos)
+php artisan sync:ai-guidelines
+
+# Forçar sincronização completa (sobrescreve arquivos existentes)
+php artisan sync:ai-guidelines --force
+```
+
+### Funcionalidades
+
+- **Download Automático**: Baixa arquivos `.md` do diretório `.claude/docs` do repositório público
+- **Atualização do CLAUDE.md**: Atualiza automaticamente as referências entre as tags `<filament-core-startkit-guidelines>`
+- **Modo Force**: Opção `--force` para sobrescrever arquivos existentes
+- **Organização**: Mantém os documentos em ordem alfabética
+- **Verificação**: Verifica a existência de arquivos antes de baixar
+
+### Estrutura
+
+Os documentos são baixados para:
+```
+.claude/docs/
+├── 01-project-structure.md
+├── 02-coding-standards.md
+├── 03-architecture-patterns.md
+└── ...
+```
+
+O comando atualiza o arquivo `CLAUDE.md` incluindo as referências aos documentos na forma:
+```markdown
+@.claude/docs/01-project-structure.md
+@.claude/docs/02-coding-standards.md
+```
 
 ## Testing
 

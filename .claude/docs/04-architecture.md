@@ -23,7 +23,7 @@ app/
 │   ├── Business/
 │   ├── Menu/
 │   └── Order/
-├── Enums/            # All enums (end with Enum suffix)
+├── Enums/            # All enums (descriptive names, no suffix)
 ├── Events/           # Domain events (past tense)
 ├── Listeners/        # Event listeners (imperative)
 ├── Models/           # Eloquent models (thin, no business logic)
@@ -124,10 +124,10 @@ This project follows **clean architecture** with clear separation of concerns:
 
 | Type             | Convention            | Example                                         |
 |------------------|-----------------------|-------------------------------------------------|
-| **Enum**         | `Enum` suffix         | `BusinessTypeEnum`, `UserRoleEnum`              |
+| **Enum**         | No suffix (Spatie)    | `BusinessType`, `UserRole`                      |
 | **Action**       | `Action` suffix       | `CreateBusinessAction`, `UpdateOrderAction`     |
 | **Value Object** | `Data` suffix         | `CreateBusinessData`, `UpdateOrderData`         |
-| **Controller**   | `Controller` suffix   | `BusinessController`, `OrderController`         |
+| **Controller**   | Plural + `Controller`  | `BusinessesController`, `OrdersController`      |
 | **Event**        | Past tense, no suffix | `BusinessCreated`, `OrderPlaced`                |
 | **Listener**     | Imperative, no suffix | `SendWelcomeEmail`, `NotifyAdmin`               |
 | **Observer**     | `Observer` suffix     | `BusinessObserver`, `OrderObserver`             |

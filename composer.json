@@ -1,5 +1,5 @@
 {
-    "name": "aronpc/filament-starter-kit",
+    "name": "aronpc/filament-core-starter-kit",
     "type": "project",
     "description": "Complete Filament starter kit with Shield (Roles & Permissions) and Media Library.",
     "keywords": [
@@ -64,15 +64,14 @@
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",
             "@php artisan filament:upgrade",
-            "@hooks"
+            "@hooks",
+            "@update-ai-guidelines"
         ],
         "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@hooks"
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
-            "@hooks"
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
@@ -83,6 +82,10 @@
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite --kill-others"
+        ],
+        "update-ai-guidelines": [
+            "curl -o .claude/docs/00-spatie-laravel-php.md https://spatie.be/laravel-php-ai-guidelines.md",
+            "@php artisan sync:ai-guidelines --force"
         ],
         "refactor": "./vendor/bin/rector",
         "fix": [
