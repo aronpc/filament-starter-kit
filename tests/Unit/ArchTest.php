@@ -20,9 +20,9 @@ test('all enums should use HasEnumFeatures trait', function (): void {
         ->toUseTrait(HasEnumFeatures::class);
 });
 
-test('all enums should have a name', function (): void {
+test('all enums should follow Spatie naming convention without Enum suffix', function (): void {
     expect('App\\Enums')
-        ->toHaveSuffix('Enum');
+        ->not->toHaveSuffix('Enum');
 });
 
 test('all actions use laravel action traits', function (): void {
